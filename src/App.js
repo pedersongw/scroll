@@ -1,24 +1,36 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState, useEffect } from "react";
+import "./App.css";
+
+import VideoCard from "./components/VideoCard";
 
 function App() {
+  const [videos, setvideos] = useState([]);
+
+  const getVideos = (length) => {
+    let newVideos = Array.from(Array(length).keys());
+    setvideos((oldVideos) => [...oldVideos, ...newVideos]);
+  };
+
+  useEffect(() => {
+    getVideos(3);
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <main>
+      <div className="slider-container">
+        {videos.length > 0 ? (
+          <>
+            {videos.map((video, id) => (
+              <VideoCard key={id} index={id + 1} />
+            ))}
+          </>
+        ) : (
+          <>
+            <h1>Nothing to show here</h1>
+          </>
+        )}
+      </div>
+    </main>
   );
 }
 
