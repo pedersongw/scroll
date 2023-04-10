@@ -1,0 +1,58 @@
+* {
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+html,
+body {
+  height: 100vh;
+  overflow: hidden;
+  color: #fff;
+  font-family: "Helvetica Neue", sans-serif;
+}
+
+.slider-container {
+  position: relative;
+  height: 100vh;
+  overflow-y: scroll;
+  /* scroll-snap-type: y mandatory;
+  scroll-behavior: smooth; */
+}
+
+.slider-children {
+  height: 100vh;
+  /* scroll-snap-align: start; */
+  background: #000;
+  border: 0;
+  position: relative;
+  border: 1px solid transparent;
+}
+
+.video {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.absolute {
+  position: fixed;
+  flex-direction: column;
+  display: flex;
+  z-index: 2;
+}
+
+.absolute-child {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background-color: white;
+  color: black;
+  text-align: center;
+  cursor: pointer;
+}
