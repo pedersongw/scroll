@@ -44,6 +44,14 @@ function App() {
         scrollContainer.current.scrollTop
       );
     } else if (!firstUpdate.current && videos.scrollChange > 0) {
+      let height = 0;
+      for (let i = 0; i < videos.scrollChange; i++) {
+        console.log("height loop use layout effect");
+        let childHeight =
+          scrollContainer.current.children[i].getBoundingClientRect().height;
+        height = height + childHeight;
+      }
+      scrollContainer.current.scrollTop = scroll + height;
     }
   }, [videos]);
 
@@ -74,13 +82,15 @@ function App() {
 
       for (let i = 0; i < newVideos.length - 25; i++) {
         console.log("height loop");
-        let childHeight = scrollContainer.current.children[i].offsetHeight;
+        let childHeight =
+          scrollContainer.current.children[i].getBoundingClientRect().height;
         console.log(scrollContainer.current.children[i], childHeight);
         height = height + childHeight;
       }
       let dummy = 0;
       for (let i = 0; i < scrollContainer.current.children.length; i++) {
-        let childHeight = scrollContainer.current.children[i].offsetHeight;
+        let childHeight =
+          scrollContainer.current.children[i].getBoundingClientRect().height;
         console.log(childHeight);
         console.log(
           "margin",
