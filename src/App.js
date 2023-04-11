@@ -30,13 +30,19 @@ function App() {
 
   useLayoutEffect(() => {
     console.log(previousVideos, videos.videos, laterVideos);
+    scrollContainer.current.removeEventListener("scroll", changeScroll, true);
     if (videos.videos.length > 0 && firstUpdate.current) {
       scrollContainer.current.scrollTop = 0;
       firstUpdate.current = false;
     } else if (!firstUpdate.current && videos.scrollChange < 0) {
+      console.log("scroll top", scrollContainer.current.scrollTop);
       scrollContainer.current.scrollTop = scroll + videos.scrollChange;
 
-      scrollContainer.current.removeEventListener("scroll", changeScroll, true);
+      console.log(
+        "uselayouteffect",
+        videos.scrollChange,
+        scrollContainer.current.scrollTop
+      );
     } else if (!firstUpdate.current && videos.scrollChange > 0) {
     }
   }, [videos]);
@@ -63,16 +69,31 @@ function App() {
         newVideos.push(Math.floor(Math.random() * 100));
       }
     }
-    if (newVideos.length > 25) {
+    if (true) {
       console.log("videos length", newVideos.length);
 
       for (let i = 0; i < newVideos.length - 25; i++) {
         console.log("height loop");
-        let childHeight =
-          scrollContainer.current.children[i].getBoundingClientRect().height;
-
+        let childHeight = scrollContainer.current.children[i].offsetHeight;
+        console.log(scrollContainer.current.children[i], childHeight);
         height = height + childHeight;
       }
+      let dummy = 0;
+      for (let i = 0; i < scrollContainer.current.children.length; i++) {
+        let childHeight = scrollContainer.current.children[i].offsetHeight;
+        console.log(childHeight);
+        console.log(
+          "margin",
+          window.getComputedStyle(scrollContainer.current.children[i]).margin
+        );
+        dummy = dummy + childHeight;
+      }
+      console.log(
+        "dummy",
+        dummy,
+        "scroll container",
+        scrollContainer.current.scrollHeight
+      );
       let videosToRemoveFromTop = newVideos.splice(0, newVideos.length - 25);
       setScroll(scrollContainer.current.scrollTop);
       scrollContainer.current.addEventListener("scroll", changeScroll, true);
@@ -82,6 +103,7 @@ function App() {
     if (height > 0) {
       height = -Math.abs(height);
     }
+    console.log("getvideos", height, scrollContainer.current.scrollTop);
 
     setvideos({
       videos: [...newVideos],
@@ -137,21 +159,21 @@ function App() {
 
   return (
     <main>
-      <div className="slider-container" ref={scrollContainer}>
-        <div className="absolute">
-          <div className="absolute-child" onClick={() => getPreviousVideos(3)}>
-            P
-          </div>
-          <div className="absolute-child" onClick={() => getVideos(3)}>
-            L
-          </div>
-          <div
-            className="absolute-child"
-            onClick={() => console.log(previousVideos, videos, laterVideos)}
-          >
-            =
-          </div>
+      <div className="absolute">
+        <div className="absolute-child" onClick={() => getPreviousVideos(3)}>
+          P
         </div>
+        <div className="absolute-child" onClick={() => getVideos(3)}>
+          L
+        </div>
+        <div
+          className="absolute-child"
+          onClick={() => console.log(previousVideos, videos, laterVideos)}
+        >
+          =
+        </div>
+      </div>
+      <div className="slider-container" ref={scrollContainer}>
         {videos ? (
           <>
             {videos.videos.map((video, index) => (
