@@ -14,27 +14,69 @@ function App() {
   const [videos, setvideos] = useState({ videos: [], scrollChange: 0 });
   const [laterVideos, setLaterVideos] = useState([]);
 
+  const [scrollContainerHeight, setScrollContainerHeight] = useState();
   const [scroll, setScroll] = useState();
 
   const firstUpdate = useRef(true);
-  const scrollContainer = useRef();
+  const scrollContainer = useRef(null);
 
   useEffect(() => {
+    if (firstUpdate.current) {
+      console.log("first update");
+      scrollContainer.current.scrollTop = 0;
+      setScroll(0);
+      setScrollContainerHeight(scrollContainer.current.scrollHeight);
+      firstUpdate.current = false;
+    }
     getVideos(3);
   }, []);
 
-  const changeScroll = useCallback((event) => {
-    console.log(event.target.scrollTop);
-    setScroll(event.target.scrollTop);
+  // const changeScroll = useCallback((event) => {
+  //   console.log(event.target.scrollTop);``
+  //   setScroll(event.target.scrollTop);
+  // }, []);
+
+  const updateScroll = useCallback((event) => {
+    setScroll(event.currentTarget.scrollTop);
+    console.log("update scroll", event.currentTarget.scrollTop);
   }, []);
 
+  const resizeHandler = useCallback(() => {
+    let newScrollTop =
+      (scroll / scrollContainerHeight) * scrollContainer.current.scrollHeight;
+    scrollContainer.current.scrollTop = newScrollTop;
+
+    console.log(
+      "resized",
+      scroll,
+      scrollContainerHeight,
+      scrollContainer.current.scrollHeight
+    );
+
+    if (newScrollTop) {
+      setScroll(newScrollTop);
+      setScrollContainerHeight(scrollContainer.current.scrollHeight);
+      console.log(
+        "new scroll top",
+        scroll,
+        scrollContainerHeight,
+        scrollContainer.current.scrollHeight
+      );
+    }
+  }, [scroll, scrollContainerHeight]);
+
+  useEffect(() => {
+    console.log("one of them changed");
+    window.addEventListener("resize", resizeHandler, true);
+    return () => {
+      window.removeEventListener("resize", resizeHandler, true);
+    };
+  }, [scroll, scrollContainerHeight]);
+
   useLayoutEffect(() => {
-    console.log(previousVideos, videos.videos, laterVideos);
-    scrollContainer.current.removeEventListener("scroll", changeScroll, true);
-    if (videos.videos.length > 0 && firstUpdate.current) {
-      scrollContainer.current.scrollTop = 0;
-      firstUpdate.current = false;
-    } else if (!firstUpdate.current && videos.scrollChange < 0) {
+    console.log("use layout effect");
+    setScrollContainerHeight(scrollContainer.current.scrollHeight);
+    if (!firstUpdate.current && videos.scrollChange < 0) {
       console.log("scroll top", scrollContainer.current.scrollTop);
       scrollContainer.current.scrollTop = scroll + videos.scrollChange;
 
@@ -105,8 +147,8 @@ function App() {
         scrollContainer.current.scrollHeight
       );
       let videosToRemoveFromTop = newVideos.splice(0, newVideos.length - 25);
-      setScroll(scrollContainer.current.scrollTop);
-      scrollContainer.current.addEventListener("scroll", changeScroll, true);
+      // setScroll(scrollContainer.current.scrollTop);
+      // scrollContainer.current.addEventListener("scroll", changeScroll, true);
 
       prevVids.push(...videosToRemoveFromTop);
     }
@@ -145,8 +187,8 @@ function App() {
         previousVids = [];
       }
 
-      setScroll(scrollContainer.current.scrollTop);
-      scrollContainer.current.addEventListener("scroll", changeScroll, true);
+      // setScroll(scrollContainer.current.scrollTop);
+      // scrollContainer.current.addEventListener("scroll", changeScroll, true);
     }
 
     if (newVideos.length > 25) {
@@ -178,12 +220,16 @@ function App() {
         </div>
         <div
           className="absolute-child"
-          onClick={() => console.log(previousVideos, videos, laterVideos)}
+          onClick={() => console.log(scrollContainerHeight, scroll)}
         >
           =
         </div>
       </div>
-      <div className="slider-container" ref={scrollContainer}>
+      <div
+        className="slider-container"
+        ref={scrollContainer}
+        onScroll={updateScroll}
+      >
         {videos ? (
           <>
             {videos.videos.map((video, index) => (
