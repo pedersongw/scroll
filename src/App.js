@@ -83,7 +83,6 @@ function App() {
           ) {
             console.log("load earlier videos", e);
             observerRef.current.unobserve(e.target);
-
             getPreviousVideos(10);
           }
         });
@@ -93,11 +92,11 @@ function App() {
       }
     );
 
-    if (observerRef.current) {
+    if (observerRef.current && videos.videos.length > 0) {
       observerRef.current.disconnect();
-      for (let i = 0; i < videos.videos.length; i++) {
-        observerRef.current.observe(scrollContainer.current.children[i]);
-      }
+
+      observerRef.current.observe(scrollContainer.current.children[3]);
+      observerRef.current.observe(scrollContainer.current.children[21]);
     }
 
     setScrollContainerHeight(scrollContainer.current.scrollHeight);
