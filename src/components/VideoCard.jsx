@@ -1,6 +1,6 @@
-const VideoCard = ({ index }) => {
+const VideoCard = ({ index, id }) => {
   return (
-    <div className="slider-children">
+    <div className="slider-children" id={id}>
       <div
         style={{
           justifyContent: "center",

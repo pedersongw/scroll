@@ -16,57 +16,48 @@ function App() {
 
   const [scrollContainerHeight, setScrollContainerHeight] = useState();
   const [scroll, setScroll] = useState();
+  const observerRef = useRef();
 
   const firstUpdate = useRef(true);
   const scrollContainer = useRef(null);
 
   useEffect(() => {
     if (firstUpdate.current) {
-      console.log("first update");
       scrollContainer.current.scrollTop = 0;
-      setScroll(0);
+      setScroll({ scroll: 0, direction: 1 });
       setScrollContainerHeight(scrollContainer.current.scrollHeight);
       firstUpdate.current = false;
     }
-    getVideos(3);
+    getVideos(25);
+    return () => {
+      observerRef.current.disconnect();
+    };
   }, []);
 
-  // const changeScroll = useCallback((event) => {
-  //   console.log(event.target.scrollTop);``
-  //   setScroll(event.target.scrollTop);
-  // }, []);
-
   const updateScroll = useCallback((event) => {
-    setScroll(event.currentTarget.scrollTop);
-    console.log("update scroll", event.currentTarget.scrollTop);
+    setScroll((prevScroll) => {
+      let newScroll = {
+        scroll: event.target.scrollTop,
+        direction: event.target.scrollTop - prevScroll.scroll > 0 ? 1 : -1,
+      };
+
+      return newScroll;
+    });
   }, []);
 
   const resizeHandler = useCallback(() => {
     let newScrollTop =
-      (scroll / scrollContainerHeight) * scrollContainer.current.scrollHeight;
+      (scroll.scroll / scrollContainerHeight) *
+      scrollContainer.current.scrollHeight;
     scrollContainer.current.scrollTop = newScrollTop;
 
-    console.log(
-      "resized",
-      scroll,
-      scrollContainerHeight,
-      scrollContainer.current.scrollHeight
-    );
-
     if (newScrollTop) {
-      setScroll(newScrollTop);
+      setScroll({ scroll: newScrollTop, direction: scroll.direction });
       setScrollContainerHeight(scrollContainer.current.scrollHeight);
-      console.log(
-        "new scroll top",
-        scroll,
-        scrollContainerHeight,
-        scrollContainer.current.scrollHeight
-      );
     }
   }, [scroll, scrollContainerHeight]);
 
   useEffect(() => {
-    console.log("one of them changed");
     window.addEventListener("resize", resizeHandler, true);
     return () => {
       window.removeEventListener("resize", resizeHandler, true);
@@ -74,31 +65,60 @@ function App() {
   }, [scroll, scrollContainerHeight]);
 
   useLayoutEffect(() => {
-    console.log("use layout effect");
-    setScrollContainerHeight(scrollContainer.current.scrollHeight);
-    if (!firstUpdate.current && videos.scrollChange < 0) {
-      console.log("scroll top", scrollContainer.current.scrollTop);
-      scrollContainer.current.scrollTop = scroll + videos.scrollChange;
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (
+            e.isIntersecting &&
+            Number(e.target.id) === 21 &&
+            e.boundingClientRect.top > 0
+          ) {
+            console.log("load later videos", e);
+            observerRef.current.unobserve(e.target);
+            getVideos(10);
+          } else if (
+            e.isIntersecting &&
+            Number(e.target.id) === 3 &&
+            e.boundingClientRect.top < 0
+          ) {
+            console.log("load earlier videos", e);
+            observerRef.current.unobserve(e.target);
 
-      console.log(
-        "uselayouteffect",
-        videos.scrollChange,
-        scrollContainer.current.scrollTop
-      );
+            getPreviousVideos(10);
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+      }
+    );
+
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+      for (let i = 0; i < videos.videos.length; i++) {
+        observerRef.current.observe(scrollContainer.current.children[i]);
+      }
+    }
+
+    setScrollContainerHeight(scrollContainer.current.scrollHeight);
+
+    if (!firstUpdate.current && videos.scrollChange < 0) {
+      scrollContainer.current.scrollTop = scroll.scroll + videos.scrollChange;
     } else if (!firstUpdate.current && videos.scrollChange > 0) {
       let height = 0;
       for (let i = 0; i < videos.scrollChange; i++) {
-        console.log("height loop use layout effect");
         let childHeight =
           scrollContainer.current.children[i].getBoundingClientRect().height;
         height = height + childHeight;
       }
-      scrollContainer.current.scrollTop = scroll + height;
+      scrollContainer.current.scrollTop = scroll.scroll + height;
     }
+    return () => {
+      observerRef.current.disconnect();
+    };
   }, [videos]);
 
   const getVideos = (length) => {
-    console.log(previousVideos, videos.videos, laterVideos);
     let prevVids = [...previousVideos];
     let newVideos = [...videos.videos];
     let laterVids = [...laterVideos];
@@ -119,43 +139,20 @@ function App() {
         newVideos.push(Math.floor(Math.random() * 100));
       }
     }
-    if (true) {
-      console.log("videos length", newVideos.length);
-
+    if (newVideos.length > 25) {
       for (let i = 0; i < newVideos.length - 25; i++) {
-        console.log("height loop");
         let childHeight =
           scrollContainer.current.children[i].getBoundingClientRect().height;
-        console.log(scrollContainer.current.children[i], childHeight);
+
         height = height + childHeight;
       }
-      let dummy = 0;
-      for (let i = 0; i < scrollContainer.current.children.length; i++) {
-        let childHeight =
-          scrollContainer.current.children[i].getBoundingClientRect().height;
-        console.log(childHeight);
-        console.log(
-          "margin",
-          window.getComputedStyle(scrollContainer.current.children[i]).margin
-        );
-        dummy = dummy + childHeight;
-      }
-      console.log(
-        "dummy",
-        dummy,
-        "scroll container",
-        scrollContainer.current.scrollHeight
-      );
       let videosToRemoveFromTop = newVideos.splice(0, newVideos.length - 25);
-      // setScroll(scrollContainer.current.scrollTop);
-      // scrollContainer.current.addEventListener("scroll", changeScroll, true);
 
       prevVids.push(...videosToRemoveFromTop);
     }
     if (height > 0) {
       height = -Math.abs(height);
     }
-    console.log("getvideos", height, scrollContainer.current.scrollTop);
 
     setvideos({
       videos: [...newVideos],
@@ -186,9 +183,6 @@ function App() {
         newVideos.unshift(...previousVids);
         previousVids = [];
       }
-
-      // setScroll(scrollContainer.current.scrollTop);
-      // scrollContainer.current.addEventListener("scroll", changeScroll, true);
     }
 
     if (newVideos.length > 25) {
@@ -215,12 +209,12 @@ function App() {
         <div className="absolute-child" onClick={() => getPreviousVideos(3)}>
           P
         </div>
-        <div className="absolute-child" onClick={() => getVideos(3)}>
+        <div className="absolute-child" onClick={() => getVideos(10)}>
           L
         </div>
         <div
           className="absolute-child"
-          onClick={() => console.log(scrollContainerHeight, scroll)}
+          onClick={() => console.log(observerRef.current.takeRecords())}
         >
           =
         </div>
@@ -233,7 +227,7 @@ function App() {
         {videos ? (
           <>
             {videos.videos.map((video, index) => (
-              <VideoCard key={index} index={video} />
+              <VideoCard key={index} index={video} id={index} />
             ))}
           </>
         ) : (
