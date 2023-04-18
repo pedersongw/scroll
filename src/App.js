@@ -11,7 +11,7 @@ import VideoCard from "./components/VideoCard";
 
 function App() {
   const [previousVideos, setPreviousVideos] = useState([]);
-  const [videos, setvideos] = useState({ videos: [], scrollChange: 0 });
+  const [videos, setVideos] = useState({ videos: [], scrollChange: 0 });
   const [laterVideos, setLaterVideos] = useState([]);
 
   const [scrollContainerHeight, setScrollContainerHeight] = useState();
@@ -62,41 +62,55 @@ function App() {
   }, [scroll, scrollContainerHeight]);
 
   const myFunc = useCallback(
-    (entries) => {
-      entries.forEach((e) => {
-        if (
-          e.isIntersecting &&
-          Number(e.target.id) === 21 &&
-          e.boundingClientRect.top > 0
-        ) {
-          console.log(e, videos);
-        } else if (
-          e.isIntersecting &&
-          Number(e.target.id) === 3 &&
-          e.boundingClientRect.top < 0
-        ) {
-          console.log(e, videos);
-          myFunc(e);
+    (e, direction) => {
+      if (direction === "later") {
+        console.log(e);
+        observerRef.current.unobserve(e.target);
+        getVideos(10);
+      } else if (direction === "earlier") {
+        if (previousVideos.length === 0) {
+          observerRef.current.unobserve(e.target);
+          console.log("unobserving");
+        } else {
+          getPreviousVideos(10);
+          console.log(e, previousVideos);
         }
-      });
+      }
     },
-    [videos]
+    [previousVideos, videos]
   );
 
-  useEffect(() => {
-    observerRef.current = new IntersectionObserver(myFunc, {
-      threshold: 0.01,
-    });
-  });
-
   useLayoutEffect(() => {
-    if (observerRef.current && videos.videos.length > 0) {
+    observerRef.current = new IntersectionObserver(
+      (entries, observer) => {
+        entries.forEach((e) => {
+          if (
+            e.isIntersecting &&
+            Number(e.target.id) === 21 &&
+            e.boundingClientRect.top > 0
+          ) {
+            myFunc(e, "later");
+          } else if (
+            e.isIntersecting &&
+            Number(e.target.id) === 3 &&
+            e.boundingClientRect.top < 0
+          ) {
+            myFunc(e, "earlier");
+          }
+        });
+      },
+      {
+        threshold: 0.01,
+      }
+    );
+
+    if (observerRef.current && scrollContainer.current.children.length > 0) {
       observerRef.current.disconnect();
 
       observerRef.current.observe(scrollContainer.current.children[3]);
       observerRef.current.observe(scrollContainer.current.children[21]);
     }
-
+    console.log(videos);
     setScrollContainerHeight(scrollContainer.current.scrollHeight);
 
     if (!firstUpdate.current && videos.scrollChange < 0) {
@@ -116,6 +130,7 @@ function App() {
   }, [videos]);
 
   const getVideos = (length) => {
+    console.log("get videos called");
     let prevVids = [...previousVideos];
     let newVideos = [...videos.videos];
     let laterVids = [...laterVideos];
@@ -151,7 +166,7 @@ function App() {
       height = -Math.abs(height);
     }
 
-    setvideos({
+    setVideos({
       videos: [...newVideos],
       scrollChange: height,
     });
@@ -194,7 +209,7 @@ function App() {
     if (previousVids) {
       setPreviousVideos(previousVids);
     }
-    setvideos({
+    setVideos({
       videos: [...newVideos],
       scrollChange: height,
     });
@@ -209,7 +224,11 @@ function App() {
         <div className="absolute-child" onClick={() => getVideos(10)}>
           L
         </div>
-        <div className="absolute-child" onClick={() => console.log(videos)}>
+
+        <div
+          className="absolute-child"
+          onClick={() => console.log(observerRef.current.takeRecords())}
+        >
           =
         </div>
       </div>
@@ -224,11 +243,7 @@ function App() {
               <VideoCard key={index} index={video} id={index} />
             ))}
           </>
-        ) : (
-          <>
-            <h1>Nothing to show here</h1>
-          </>
-        )}
+        ) : null}
       </div>
     </main>
   );
