@@ -29,9 +29,6 @@ function App() {
       firstUpdate.current = false;
     }
     getVideos(25);
-    return () => {
-      observerRef.current.disconnect();
-    };
   }, []);
 
   const updateScroll = useCallback((event) => {
@@ -64,34 +61,35 @@ function App() {
     };
   }, [scroll, scrollContainerHeight]);
 
-  useLayoutEffect(() => {
-    observerRef.current = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          if (
-            e.isIntersecting &&
-            Number(e.target.id) === 21 &&
-            e.boundingClientRect.top > 0
-          ) {
-            console.log("load later videos", e);
-            observerRef.current.unobserve(e.target);
-            getVideos(10);
-          } else if (
-            e.isIntersecting &&
-            Number(e.target.id) === 3 &&
-            e.boundingClientRect.top < 0
-          ) {
-            console.log("load earlier videos", e);
-            observerRef.current.unobserve(e.target);
-            getPreviousVideos(10);
-          }
-        });
-      },
-      {
-        threshold: 0.1,
-      }
-    );
+  const myFunc = useCallback(
+    (entries) => {
+      entries.forEach((e) => {
+        if (
+          e.isIntersecting &&
+          Number(e.target.id) === 21 &&
+          e.boundingClientRect.top > 0
+        ) {
+          console.log(e, videos);
+        } else if (
+          e.isIntersecting &&
+          Number(e.target.id) === 3 &&
+          e.boundingClientRect.top < 0
+        ) {
+          console.log(e, videos);
+          myFunc(e);
+        }
+      });
+    },
+    [videos]
+  );
 
+  useEffect(() => {
+    observerRef.current = new IntersectionObserver(myFunc, {
+      threshold: 0.01,
+    });
+  });
+
+  useLayoutEffect(() => {
     if (observerRef.current && videos.videos.length > 0) {
       observerRef.current.disconnect();
 
@@ -211,10 +209,7 @@ function App() {
         <div className="absolute-child" onClick={() => getVideos(10)}>
           L
         </div>
-        <div
-          className="absolute-child"
-          onClick={() => console.log(observerRef.current.takeRecords())}
-        >
+        <div className="absolute-child" onClick={() => console.log(videos)}>
           =
         </div>
       </div>
